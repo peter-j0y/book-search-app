@@ -1,15 +1,9 @@
-import java.util.Properties
-
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
+    alias(libs.plugins.ksp)
+    alias(libs.plugins.hilt)
 }
-
-val localProperties = Properties().apply {
-    val file = rootProject.file("local.properties")
-    if (file.exists()) file.inputStream().use { load(it) }
-}
-val kakaoApiKey: String = localProperties.getProperty("KAKAO_API_KEY").orEmpty()
 
 android {
     namespace = "com.peter.booksearchapp"
@@ -25,8 +19,6 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-
-        buildConfigField("String", "KAKAO_API_KEY", "\"$kakaoApiKey\"")
     }
 
     buildTypes {
@@ -43,12 +35,15 @@ android {
     }
     buildFeatures {
         compose = true
-        buildConfig = true
     }
 }
 
 dependencies {
     implementation(project(":feature:book:presentation"))
+    implementation(project(":core:network"))
+
+    implementation(libs.hilt.android)
+    ksp(libs.hilt.compiler)
 
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.activity.compose)
