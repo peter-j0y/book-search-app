@@ -24,3 +24,5 @@ dependencyResolutionManagement {
 
 rootProject.name = "BookSearchApp"
 include(":app")
+include(":feature:book:presentation")
+include(":feature:book:data")
