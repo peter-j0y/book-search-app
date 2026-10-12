@@ -7,12 +7,15 @@ import androidx.room.PrimaryKey
 
 @Entity(
     tableName = "favorite_books",
-    indices = [Index(value = ["isbn"], unique = true)],
+    indices = [
+        Index(value = ["isbn"], unique = true),
+        Index(value = ["title"]),
+    ],
 )
 data class FavoriteBookEntity(
     @PrimaryKey(autoGenerate = true)
     @ColumnInfo(name = "id") val id: Long = 0,
-    @ColumnInfo(name = "title") val title: String?,
+    @ColumnInfo(name = "title") val title: String,
     @ColumnInfo(name = "contents") val contents: String?,
     @ColumnInfo(name = "url") val url: String?,
     @ColumnInfo(name = "isbn") val isbn: String?,
