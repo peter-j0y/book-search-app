@@ -2,6 +2,7 @@ package com.peter.booksearchapp.core.network.di
 
 import com.peter.booksearchapp.core.network.BuildConfig
 import com.peter.booksearchapp.core.network.KakaoAuthInterceptor
+import com.peter.booksearchapp.core.network.adapter.ApiResponseCallAdapterFactory
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -25,7 +26,7 @@ internal object NetworkModule {
     @Singleton
     fun provideJson(): Json = Json {
         ignoreUnknownKeys = true
-        coerceInputValues = true
+        explicitNulls = false
     }
 
     @Provides
@@ -54,5 +55,6 @@ internal object NetworkModule {
             .baseUrl(KAKAO_BASE_URL)
             .client(okHttpClient)
             .addConverterFactory(json.asConverterFactory("application/json".toMediaType()))
+            .addCallAdapterFactory(ApiResponseCallAdapterFactory(json))
             .build()
 }
