@@ -23,6 +23,7 @@ android {
 
 dependencies {
     api(project(":core:network"))
+    api(project(":core:database"))
 
     implementation(libs.hilt.android)
     ksp(libs.hilt.compiler)
