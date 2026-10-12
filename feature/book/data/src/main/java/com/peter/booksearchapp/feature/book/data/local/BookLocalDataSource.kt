@@ -2,15 +2,47 @@ package com.peter.booksearchapp.feature.book.data.local
 
 import com.peter.booksearchapp.core.database.dao.FavoriteBookDao
 import com.peter.booksearchapp.core.database.entity.FavoriteBookEntity
+import com.peter.booksearchapp.feature.book.data.local.model.FavoriteBookCursor
+import com.peter.booksearchapp.feature.book.data.local.model.FavoriteBookSort
 import javax.inject.Inject
 
 internal class BookLocalDataSource @Inject constructor(
     private val favoriteBookDao: FavoriteBookDao,
 ) {
-    suspend fun getFavoriteBooks(page: Int, size: Int): List<FavoriteBookEntity> =
-        favoriteBookDao.getFavoriteBooks(limit = size, offset = (page - 1) * size)
+    suspend fun getFavoriteBooks(
+        sort: FavoriteBookSort,
+        after: FavoriteBookCursor?,
+        query: String?,
+        minPrice: Int?,
+        maxPrice: Int?,
+        size: Int,
+    ): List<FavoriteBookEntity> {
+        val escapedQuery = query?.takeIf { it.isNotBlank() }?.escapeLikePattern()
+        return when (sort) {
+            FavoriteBookSort.TITLE_ASC -> favoriteBookDao.getFavoriteBooksByTitleAsc(
+                afterTitle = after?.title,
+                afterId = after?.id,
+                query = escapedQuery,
+                minPrice = minPrice,
+                maxPrice = maxPrice,
+                limit = size,
+            )
+            FavoriteBookSort.TITLE_DESC -> favoriteBookDao.getFavoriteBooksByTitleDesc(
+                afterTitle = after?.title,
+                afterId = after?.id,
+                query = escapedQuery,
+                minPrice = minPrice,
+                maxPrice = maxPrice,
+                limit = size,
+            )
+        }
+    }
 
     suspend fun addFavoriteBook(book: FavoriteBookEntity) = favoriteBookDao.insert(book)
 
     suspend fun removeFavoriteBook(isbn: String) = favoriteBookDao.deleteByIsbn(isbn)
+
+    // 검색어에 든 %, _가 LIKE 와일드카드로 해석되지 않도록 DAO의 ESCAPE '\'에 맞춰 이스케이프합니다.
+    private fun String.escapeLikePattern(): String =
+        replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
 }
