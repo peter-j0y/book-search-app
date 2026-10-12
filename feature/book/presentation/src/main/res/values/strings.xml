@@ -1,0 +1,44 @@
+<resources>
+    <string name="book_search_title">검색</string>
+    <string name="book_favorite_title">즐겨찾기</string>
+    <string name="book_search_placeholder">제목 또는 저자를 입력하세요.</string>
+    <string name="book_search_clear">검색어 지우기</string>
+
+    <string name="book_sort">정렬</string>
+    <string name="book_filter">필터</string>
+    <string name="book_sort_accuracy">정확도순</string>
+    <string name="book_sort_latest">발간일순</string>
+    <string name="book_sort_title_asc">오름차순(제목)</string>
+    <string name="book_sort_title_desc">내림차순(제목)</string>
+
+    <string name="book_price_filter_title">금액 필터</string>
+    <string name="book_price_filter_all">전체 금액</string>
+    <string name="book_price_filter_under_10000">1만원 미만</string>
+    <string name="book_price_filter_10000_to_20000">1만원 ~ 2만원</string>
+    <string name="book_price_filter_20000_to_30000">2만원 ~ 3만원</string>
+    <string name="book_price_filter_over_30000">3만원 이상</string>
+
+    <string name="book_label_author">저자</string>
+    <string name="book_label_publisher">출판사</string>
+    <string name="book_label_published_date">출간일</string>
+    <string name="book_label_isbn">ISBN</string>
+    <string name="book_label_price">정상가</string>
+    <string name="book_label_sale_price">할인가</string>
+    <string name="book_price">%1$s원</string>
+    <string name="book_unknown">정보 없음</string>
+
+    <string name="book_detail_contents">책 소개</string>
+    <string name="book_detail_contents_empty">책 소개가 없습니다.</string>
+    <string name="book_detail_back">뒤로 가기</string>
+
+    <string name="book_favorite_add">즐겨찾기 추가</string>
+    <string name="book_favorite_remove">즐겨찾기 해제</string>
+
+    <string name="book_search_idle">읽고 싶은 책을 검색해 보세요.</string>
+    <string name="book_search_empty">검색 결과가 없습니다.</string>
+    <string name="book_favorite_empty">즐겨찾기한 도서가 없습니다.</string>
+    <string name="book_favorite_no_match">조건에 맞는 즐겨찾기 도서가 없습니다.</string>
+    <string name="book_error_network">네트워크 연결이 불안정합니다.\n잠시 후 다시 시도해 주세요.</string>
+    <string name="book_error_load_more">다음 페이지를 불러오지 못했습니다.</string>
+    <string name="book_retry">다시 시도</string>
+</resources>
