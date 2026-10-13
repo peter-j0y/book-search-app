@@ -32,6 +32,7 @@ fun FavoriteScreen(
     onPriceFilterChange: (PriceFilter) -> Unit,
     onBookClick: (BookUiModel) -> Unit,
     onFavoriteClick: (BookUiModel) -> Unit,
+    onLoadMore: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     var showPriceFilter by rememberSaveable { mutableStateOf(false) }
@@ -66,6 +67,7 @@ fun FavoriteScreen(
                     books = result.data,
                     onBookClick = onBookClick,
                     onFavoriteClick = onFavoriteClick,
+                    onLoadMore = onLoadMore,
                 )
                 uiState.hasCondition -> MessageContent(stringResource(R.string.book_favorite_no_match))
                 else -> MessageContent(stringResource(R.string.book_favorite_empty))
@@ -102,6 +104,7 @@ private fun FavoriteScreenPreview(uiState: FavoriteUiState) {
             onPriceFilterChange = {},
             onBookClick = {},
             onFavoriteClick = {},
+            onLoadMore = {},
         )
     }
 }
