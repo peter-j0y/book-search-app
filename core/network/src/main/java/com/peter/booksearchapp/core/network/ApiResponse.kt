@@ -20,3 +20,8 @@ sealed interface ApiResponse<out T> {
         data class UnknownError(override val exception: Throwable) : Failure
     }
 }
+
+inline fun <T, R> ApiResponse<T>.map(transform: (T) -> R): ApiResponse<R> = when (this) {
+    is ApiResponse.Success -> ApiResponse.Success(transform(data))
+    is ApiResponse.Failure -> this
+}
