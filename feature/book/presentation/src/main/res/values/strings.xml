@@ -30,6 +30,7 @@
     <string name="book_detail_contents">책 소개</string>
     <string name="book_detail_contents_empty">책 소개가 없습니다.</string>
     <string name="book_detail_back">뒤로 가기</string>
+    <string name="book_detail_placeholder">도서를 선택하면 상세 정보가 여기에 표시됩니다.</string>
 
     <string name="book_favorite_add">즐겨찾기 추가</string>
     <string name="book_favorite_remove">즐겨찾기 해제</string>
