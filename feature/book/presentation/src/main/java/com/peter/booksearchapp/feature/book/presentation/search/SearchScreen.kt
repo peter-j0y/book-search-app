@@ -61,15 +61,17 @@ fun SearchScreen(
                 )
             }
         },
-    ) {
+    ) { contentPadding ->
+        val paddingModifier = Modifier.padding(contentPadding)
         when (val result = uiState.result) {
-            UiState.Idle -> RecommendedKeywords(onKeywordClick = onKeywordClick)
-            UiState.Loading -> LoadingContent()
-            UiState.Error -> ErrorContent(onRetry = onRetry)
+            UiState.Idle -> RecommendedKeywords(onKeywordClick = onKeywordClick, modifier = paddingModifier)
+            UiState.Loading -> LoadingContent(paddingModifier)
+            UiState.Error -> ErrorContent(onRetry = onRetry, modifier = paddingModifier)
             is UiState.Success -> if (result.data.books.isEmpty()) {
-                MessageContent(stringResource(R.string.book_search_empty))
+                MessageContent(stringResource(R.string.book_search_empty), paddingModifier)
             } else {
                 BookList(
+                    contentPadding = contentPadding,
                     books = result.data.books,
                     onBookClick = onBookClick,
                     onFavoriteClick = onFavoriteClick,
