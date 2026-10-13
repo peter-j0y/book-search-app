@@ -7,6 +7,7 @@ import com.peter.booksearchapp.feature.book.data.local.model.FavoriteBookCursor
 import com.peter.booksearchapp.feature.book.data.local.model.FavoriteBookSort
 import com.peter.booksearchapp.feature.book.data.remote.BookRemoteDataSource
 import com.peter.booksearchapp.feature.book.data.remote.model.BookSearchResponse
+import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject
 
 class BookRepository @Inject internal constructor(
@@ -35,6 +36,8 @@ class BookRepository @Inject internal constructor(
         maxPrice = maxPrice,
         size = size,
     )
+
+    fun observeFavoriteIsbns(isbns: List<String>): Flow<List<String>> = localDataSource.observeFavoriteIsbns(isbns)
 
     suspend fun addFavoriteBook(book: FavoriteBookEntity) = localDataSource.addFavoriteBook(book)
 

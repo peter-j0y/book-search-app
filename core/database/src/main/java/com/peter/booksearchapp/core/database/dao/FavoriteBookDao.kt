@@ -5,6 +5,7 @@ import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import com.peter.booksearchapp.core.database.entity.FavoriteBookEntity
+import kotlinx.coroutines.flow.Flow
 
 private const val SELLING_PRICE = "CASE WHEN sale_price >= 0 THEN sale_price ELSE price END"
 
@@ -55,6 +56,9 @@ interface FavoriteBookDao {
         maxPrice: Int?,
         limit: Int,
     ): List<FavoriteBookEntity>
+
+    @Query("SELECT isbn FROM favorite_books WHERE isbn IN (:isbns)")
+    fun observeFavoriteIsbns(isbns: List<String>): Flow<List<String>>
 
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insert(book: FavoriteBookEntity)
