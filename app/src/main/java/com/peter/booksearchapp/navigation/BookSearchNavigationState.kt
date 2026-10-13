@@ -35,12 +35,13 @@ class BookSearchNavigationState(
     val isAtTopLevel: Boolean
         get() = currentBackStack.size == 1
 
-    /**
-     * 화면에 이어 붙일 탭 순서. 시작 탭이 아니면 시작 탭 위에 현재 탭을 쌓아서,
-     * 다른 탭의 첫 화면에서 뒤로 가기를 누르면 시작 탭으로 돌아온 뒤 앱이 종료되도록 합니다.
-     */
-    val tabsInUse: List<TopLevelDestination>
-        get() = if (currentTab == startDestination) listOf(startDestination) else listOf(startDestination, currentTab)
+    /** 현재 탭 맨 위에 있는 화면 */
+    val topKey: NavKey
+        get() = currentBackStack.last()
+
+    /** 시작 탭이 아닌 탭의 첫 화면에서는 뒤로 가기를 누르면 앱을 끄지 않고 시작 탭으로 돌아갑니다. */
+    val shouldBackToStartTab: Boolean
+        get() = currentTab != startDestination && isAtTopLevel
 
     fun selectTab(tab: TopLevelDestination) {
         if (tab == currentTab) {
@@ -50,7 +51,9 @@ class BookSearchNavigationState(
         }
     }
 
-    fun navigate(key: NavKey) {
+    /** [replaceTop]이 true면 맨 위 화면을 [key]로 바꾸고, 아니면 위에 쌓습니다. */
+    fun navigate(key: NavKey, replaceTop: Boolean = false) {
+        if (replaceTop) currentBackStack.removeLastOrNull()
         currentBackStack.add(key)
     }
 
@@ -62,6 +65,10 @@ class BookSearchNavigationState(
         }
     }
 
+    /**
+     * 현재 탭의 화면만 넘깁니다. 다른 탭의 화면까지 이어 붙이면 리스트-상세 화면이 다른 탭에서 연 상세를 함께 묶어 보여줄 수 있습니다.
+     * 화면을 넘기지 않는 탭도 상태는 유지되도록 모든 탭의 항목을 기억해 둡니다.
+     */
     @Composable
     fun rememberEntries(entryProvider: (NavKey) -> NavEntry<NavKey>): List<NavEntry<NavKey>> {
         val entriesByTab = backStacks.mapValues { (_, backStack) ->
@@ -74,7 +81,7 @@ class BookSearchNavigationState(
                 entryProvider = entryProvider,
             )
         }
-        return tabsInUse.flatMap { entriesByTab.getValue(it) }
+        return entriesByTab.getValue(currentTab)
     }
 }
 

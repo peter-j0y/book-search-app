@@ -1,5 +1,6 @@
 package com.peter.booksearchapp.feature.book.presentation.favorite
 
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -58,19 +59,21 @@ fun FavoriteScreen(
                 )
             }
         },
-    ) {
+    ) { contentPadding ->
+        val paddingModifier = Modifier.padding(contentPadding)
         when (val result = uiState.result) {
-            UiState.Idle, UiState.Loading -> LoadingContent()
-            UiState.Error -> MessageContent(stringResource(R.string.book_favorite_error))
+            UiState.Idle, UiState.Loading -> LoadingContent(paddingModifier)
+            UiState.Error -> MessageContent(stringResource(R.string.book_favorite_error), paddingModifier)
             is UiState.Success -> when {
                 result.data.isNotEmpty() -> BookList(
+                    contentPadding = contentPadding,
                     books = result.data,
                     onBookClick = onBookClick,
                     onFavoriteClick = onFavoriteClick,
                     onLoadMore = onLoadMore,
                 )
-                uiState.hasCondition -> MessageContent(stringResource(R.string.book_favorite_no_match))
-                else -> MessageContent(stringResource(R.string.book_favorite_empty))
+                uiState.hasCondition -> MessageContent(stringResource(R.string.book_favorite_no_match), paddingModifier)
+                else -> MessageContent(stringResource(R.string.book_favorite_empty), paddingModifier)
             }
         }
     }
