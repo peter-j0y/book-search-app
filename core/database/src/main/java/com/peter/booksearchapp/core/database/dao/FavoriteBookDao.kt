@@ -11,11 +11,13 @@ private const val SELLING_PRICE = "CASE WHEN sale_price >= 0 THEN sale_price ELS
 
 @Dao
 interface FavoriteBookDao {
-    // 즐겨찾기를 제목순으로 limit개씩 가져옵니다.
-    // - afterTitle, afterId: 직전 페이지의 마지막 책. 이 책 다음부터 가져옵니다. 첫 페이지는 null.
-    //   제목이 같은 책이 있을 수 있어서 id까지 함께 비교합니다.
-    // - query, minPrice, maxPrice: null이면 그 조건은 적용하지 않습니다.
-    // - 금액은 할인가가 있으면 할인가, 없으면 정가로 비교합니다. (minPrice 이상, maxPrice 미만)
+    /**
+     * 즐겨찾기를 제목순으로 limit개씩 가져옵니다.
+     * - afterTitle, afterId: 직전 페이지의 마지막 책. 이 책 다음부터 가져옵니다. 첫 페이지는 null.
+     *   제목이 같은 책이 있을 수 있어서 id까지 함께 비교합니다.
+     * - query, minPrice, maxPrice: null이면 그 조건은 적용하지 않습니다.
+     * - 금액은 할인가가 있으면 할인가, 없으면 정가로 비교합니다. (minPrice 이상, maxPrice 미만)
+     */
     @Query(
         """
         SELECT * FROM favorite_books
@@ -36,7 +38,7 @@ interface FavoriteBookDao {
         limit: Int,
     ): List<FavoriteBookEntity>
 
-    // 위 쿼리의 역순(제목 내림차순) 버전입니다.
+    /** [getFavoriteBooksByTitleAsc]의 역순(제목 내림차순) 버전입니다. */
     @Query(
         """
         SELECT * FROM favorite_books

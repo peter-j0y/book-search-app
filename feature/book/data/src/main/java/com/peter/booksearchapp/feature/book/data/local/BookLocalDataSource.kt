@@ -51,7 +51,7 @@ internal class BookLocalDataSource @Inject constructor(
 
     suspend fun removeFavoriteBook(isbn: String) = favoriteBookDao.deleteByIsbn(isbn)
 
-    // 검색어에 든 %, _가 LIKE 와일드카드로 해석되지 않도록 DAO의 ESCAPE '\'에 맞춰 이스케이프합니다.
+    /** 검색어에 든 %, _가 LIKE 와일드카드로 해석되지 않도록 DAO의 ESCAPE '\'에 맞춰 이스케이프합니다. */
     private fun String.escapeLikePattern(): String =
         replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
 }

@@ -11,12 +11,12 @@ class ObserveFavoriteIsbnsUseCase @Inject constructor(
 ) {
     operator fun invoke(isbns: List<String>): Flow<Set<String>> {
         if (isbns.isEmpty()) return flowOf(emptySet())
-        // SQLite 3.32.0 미만은 쿼리 인자 999개가 기본 한도이기 때문에 청크해서 요청한다.(https://www.sqlite.org/limits.html)
         val flows = isbns.distinct().chunked(MAX_QUERY_ARGS).map { bookRepository.observeFavoriteIsbns(it) }
         return combine(flows) { results -> results.flatMap { it }.toSet() }
     }
 
     private companion object {
+        /** SQLite 3.32.0 미만은 쿼리 인자 999개가 기본 한도이기 때문에 이 개수씩 나눠서 요청합니다. (https://www.sqlite.org/limits.html) */
         const val MAX_QUERY_ARGS = 500
     }
 }
