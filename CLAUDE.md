@@ -110,6 +110,12 @@ UI Layer (presentation) ──▶ Domain Layer (선택) ──▶ Data Layer
 - **쓰지 않는 곳**: 받은 인자를 그대로 넘기기만 하는 위임 코드(예: 로직 없는 Repository, 데이터소스). 이런 테스트는 구현에 묶여 시그니처가 바뀔 때마다 같이 고쳐야 하고, 잡아내는 버그가 없습니다.
 - 라이브러리 자체의 동작(예: kotlinx.serialization의 기본값 처리)은 테스트하지 않습니다.
 - 가짜 객체는 mock 라이브러리 대신 인터페이스를 직접 구현한 Fake 클래스로 만듭니다.
+- 다른 모듈의 테스트에서도 쓰는 Fake는 그 인터페이스가 있는 모듈의 testFixtures에 둡니다. testFixtures는 같은 모듈의 internal에 접근할 수 있어서, 운영 코드의 공개 범위를 넓히지 않고 테스트용 객체를 조립할 수 있습니다.
+  - `:core:database` testFixtures: `FakeFavoriteBookDao`
+  - `:feature:book:data` testFixtures: `FakeBookApi`, 실제 데이터소스 · Repository를 Fake로 조립하는 `testBookRepository()`
+- ViewModel 테스트는 실제 UseCase · Repository · 데이터소스를 쓰고 맨 아래의 Retrofit 서비스와 DAO만 Fake로 바꿉니다. Repository나 UseCase를 테스트만을 위해 인터페이스로 추상화하지 않습니다.
+- Fake DAO는 SQL을 단순하게 흉내 낼 뿐이라, SQL 자체가 맞는지는 Fake로 테스트하지 않습니다.
+- Room의 RoomDatabase처럼 JVM 단위 테스트에서 만들 수 없는 객체는 데이터소스가 직접 받지 않고, 필요한 기능만 주입받습니다(예: `@FavoriteTableChanges Flow<Unit>`).
 
 ## 의존성 주입 (Hilt)
 
