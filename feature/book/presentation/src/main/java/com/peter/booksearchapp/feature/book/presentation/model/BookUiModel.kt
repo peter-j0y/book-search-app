@@ -1,10 +1,8 @@
 package com.peter.booksearchapp.feature.book.presentation.model
 
 import androidx.compose.runtime.Immutable
-import kotlinx.serialization.Serializable
 
 @Immutable
-@Serializable
 data class BookUiModel(
     val id: String,
     val title: String,

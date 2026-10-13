@@ -22,5 +22,8 @@ enum class AppendState {
     Idle,
     Loading,
     Error,
-    End,
+    End;
+
+    val canLoadMore: Boolean
+        get() = this == Idle || this == Error
 }

@@ -1,24 +1,30 @@
 package com.peter.booksearchapp.feature.book.presentation.search
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
-import com.peter.booksearchapp.feature.book.presentation.model.BookUiModel
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.peter.booksearchapp.feature.book.domain.model.Book
 
-// TODO: SearchViewModel을 연결하면 상태와 이벤트를 ViewModel에서 받습니다.
 @Composable
 internal fun SearchRoute(
-    onBookClick: (BookUiModel) -> Unit,
+    onBookClick: (Book) -> Unit,
     modifier: Modifier = Modifier,
+    viewModel: SearchViewModel = hiltViewModel(),
 ) {
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+
     SearchScreen(
-        uiState = SearchUiState(),
-        onQueryChange = {},
-        onSearch = {},
-        onSortChange = {},
-        onBookClick = onBookClick,
-        onFavoriteClick = {},
-        onLoadMore = {},
-        onRetry = {},
+        uiState = uiState,
+        onQueryChange = viewModel::onQueryChange,
+        onSearch = viewModel::onSearch,
+        onKeywordClick = viewModel::onKeywordClick,
+        onSortChange = viewModel::onSortChange,
+        onBookClick = { book -> viewModel.findBook(book.id)?.let(onBookClick) },
+        onFavoriteClick = viewModel::onFavoriteClick,
+        onLoadMore = viewModel::onLoadMore,
+        onRetry = viewModel::onRetry,
         modifier = modifier,
     )
 }
