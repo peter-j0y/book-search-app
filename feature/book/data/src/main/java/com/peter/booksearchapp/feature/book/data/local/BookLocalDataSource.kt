@@ -1,17 +1,16 @@
 package com.peter.booksearchapp.feature.book.data.local
 
-import com.peter.booksearchapp.core.database.BookSearchDatabase
+import com.peter.booksearchapp.core.database.FavoriteTableChanges
 import com.peter.booksearchapp.core.database.dao.FavoriteBookDao
 import com.peter.booksearchapp.core.database.entity.FavoriteBookEntity
 import com.peter.booksearchapp.feature.book.data.local.model.FavoriteBookCursor
 import com.peter.booksearchapp.feature.book.data.local.model.FavoriteBookSort
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.map
 import javax.inject.Inject
 
 internal class BookLocalDataSource @Inject constructor(
-    private val database: BookSearchDatabase,
     private val favoriteBookDao: FavoriteBookDao,
+    @FavoriteTableChanges private val favoriteTableChanges: Flow<Unit>,
 ) {
     suspend fun getFavoriteBooks(
         sort: FavoriteBookSort,
@@ -44,8 +43,7 @@ internal class BookLocalDataSource @Inject constructor(
 
     fun observeFavoriteIsbns(isbns: List<String>): Flow<List<String>> = favoriteBookDao.observeFavoriteIsbns(isbns)
 
-    fun observeFavoriteTableChanges(): Flow<Unit> =
-        database.invalidationTracker.createFlow(FavoriteBookEntity.TABLE_NAME, emitInitialState = true).map { }
+    fun observeFavoriteTableChanges(): Flow<Unit> = favoriteTableChanges
 
     suspend fun addFavoriteBook(book: FavoriteBookEntity) = favoriteBookDao.insert(book)
 

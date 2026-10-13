@@ -42,5 +42,7 @@ dependencies {
     api(libs.androidx.navigation3.runtime)
     implementation(libs.androidx.compose.material3.adaptive.navigation3)
     testImplementation(libs.junit)
+    testImplementation(testFixtures(project(":feature:book:data")))
+    testImplementation(libs.kotlinx.coroutines.test)
     debugImplementation(libs.androidx.compose.ui.tooling)
 }

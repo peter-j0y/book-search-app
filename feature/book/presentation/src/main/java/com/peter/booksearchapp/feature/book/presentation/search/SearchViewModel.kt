@@ -80,7 +80,7 @@ class SearchViewModel @Inject constructor(
      */
     private val searchOnQueryChange: Flow<Unit> = query
         .debounce(SEARCH_DEBOUNCE_MILLIS.milliseconds)
-        .onEach { search(SearchRequest(it.trim(), sort.value)) }
+        .onEach { search(SearchRequest(it.trim(), sort.value), retryIfFailed = false) }
         .map { Unit }
         .onStart { emit(Unit) }
 
@@ -155,13 +155,16 @@ class SearchViewModel @Inject constructor(
         (searchedBooks.value as? UiState.Success)?.data?.books?.firstOrNull { it.isbn == id }
 
     /**
-     * 같은 조건으로 이미 요청했다면 실패한 경우가 아니면 다시 요청하지 않습니다.
+     * 같은 조건으로 이미 요청했다면 다시 요청하지 않습니다.
+     * 단, 직전 검색이 실패했고 [retryIfFailed]가 true면(키보드 검색 키 · 추천 검색어 · 다시 시도처럼 사용자가 직접 한 동작) 다시 요청합니다.
+     * 입력 debounce로 자동 검색할 때는 false로 불러, 실패한 검색을 사용자 모르게 다시 요청하지 않게 합니다.
      * 새 검색을 시작하면 진행 중인 요청은 취소합니다.
      * 검색어를 지워도 이전 결과는 그대로 두고, 새 검색어를 입력하면 그때 결과를 바꿉니다.
      */
-    private fun search(request: SearchRequest) {
+    private fun search(request: SearchRequest, retryIfFailed: Boolean = true) {
         if (request.query.isEmpty()) return
-        if (request == lastRequest && searchedBooks.value != UiState.Error) return
+        val canRetry = retryIfFailed && searchedBooks.value == UiState.Error
+        if (request == lastRequest && !canRetry) return
         lastRequest = request
         searchJob?.cancel()
 
