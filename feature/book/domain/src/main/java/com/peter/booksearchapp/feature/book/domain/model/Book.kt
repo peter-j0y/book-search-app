@@ -1,5 +1,8 @@
 package com.peter.booksearchapp.feature.book.domain.model
 
+import kotlinx.serialization.Serializable
+
+@Serializable
 data class Book(
     val isbn: String,
     val title: String,

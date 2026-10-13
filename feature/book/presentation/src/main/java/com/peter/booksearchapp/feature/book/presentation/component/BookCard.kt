@@ -8,7 +8,6 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
@@ -28,7 +27,6 @@ import com.peter.booksearchapp.feature.book.presentation.R
 import com.peter.booksearchapp.feature.book.presentation.model.BookUiModel
 import com.peter.booksearchapp.feature.book.presentation.preview.PreviewBooks
 
-/** 검색 탭과 즐겨찾기 탭이 함께 쓰는 도서 카드. */
 @Composable
 internal fun BookCard(
     book: BookUiModel,
@@ -87,8 +85,6 @@ internal fun BookCard(
             FavoriteButton(
                 isFavorite = book.isFavorite,
                 onClick = onFavoriteClick,
-                filled = true,
-                modifier = Modifier.size(40.dp),
             )
         }
     }
@@ -105,7 +101,6 @@ private fun BookCardInfo(label: String, value: String) {
     )
 }
 
-/** 할인 중이면 정상가를 취소선으로 함께 보여준다. */
 @Composable
 private fun BookCardPrice(price: Int?, salePrice: Int?, modifier: Modifier = Modifier) {
     Row(

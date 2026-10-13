@@ -39,6 +39,8 @@ class BookRepository @Inject internal constructor(
 
     fun observeFavoriteIsbns(isbns: List<String>): Flow<List<String>> = localDataSource.observeFavoriteIsbns(isbns)
 
+    fun observeFavoriteTableChanges(): Flow<Unit> = localDataSource.observeFavoriteTableChanges()
+
     suspend fun addFavoriteBook(book: FavoriteBookEntity) = localDataSource.addFavoriteBook(book)
 
     suspend fun removeFavoriteBook(isbn: String) = localDataSource.removeFavoriteBook(isbn)

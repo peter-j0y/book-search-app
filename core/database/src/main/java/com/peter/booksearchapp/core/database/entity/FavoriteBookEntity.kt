@@ -6,7 +6,7 @@ import androidx.room.Index
 import androidx.room.PrimaryKey
 
 @Entity(
-    tableName = "favorite_books",
+    tableName = FavoriteBookEntity.TABLE_NAME,
     indices = [
         Index(value = ["isbn"], unique = true),
         Index(value = ["title"]),
@@ -27,4 +27,8 @@ data class FavoriteBookEntity(
     @ColumnInfo(name = "sale_price") val salePrice: Int?,
     @ColumnInfo(name = "thumbnail") val thumbnail: String?,
     @ColumnInfo(name = "status") val status: String?,
-)
+) {
+    companion object {
+        const val TABLE_NAME = "favorite_books"
+    }
+}

@@ -35,6 +35,17 @@
     <string name="book_favorite_remove">즐겨찾기 해제</string>
 
     <string name="book_search_idle">읽고 싶은 책을 검색해 보세요.</string>
+    <string name="book_search_recommended_title">추천 검색어</string>
+    <string-array name="book_search_recommended_keywords">
+        <item>코틀린</item>
+        <item>안드로이드</item>
+        <item>해리포터</item>
+        <item>어린왕자</item>
+        <item>데미안</item>
+        <item>미움받을 용기</item>
+        <item>사피엔스</item>
+        <item>경제</item>
+    </string-array>
     <string name="book_search_empty">검색 결과가 없습니다.</string>
     <string name="book_favorite_empty">즐겨찾기한 도서가 없습니다.</string>
     <string name="book_favorite_no_match">조건에 맞는 즐겨찾기 도서가 없습니다.</string>

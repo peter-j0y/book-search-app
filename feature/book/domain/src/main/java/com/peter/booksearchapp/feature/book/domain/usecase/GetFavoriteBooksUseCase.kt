@@ -10,7 +10,7 @@ import javax.inject.Inject
 class GetFavoriteBooksUseCase @Inject constructor(
     private val bookRepository: BookRepository,
 ) {
-    // 첫 페이지는 after에 null을 넘기고, 다음 페이지는 직전 결과의 nextCursor를 넘깁니다.
+    /** 첫 페이지는 [after]에 null을 넘기고, 다음 페이지는 직전 결과의 nextCursor를 넘깁니다. */
     suspend operator fun invoke(
         sort: FavoriteBookSort,
         after: FavoriteBookCursor?,

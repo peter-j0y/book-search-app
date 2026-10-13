@@ -1,16 +1,24 @@
 package com.peter.booksearchapp.feature.book.presentation.model
 
 import androidx.annotation.StringRes
+import com.peter.booksearchapp.feature.book.data.local.model.FavoriteBookSort
+import com.peter.booksearchapp.feature.book.domain.model.BookSearchSort
 import com.peter.booksearchapp.feature.book.presentation.R
 
-enum class SearchSort(@StringRes val labelRes: Int) {
-    ACCURACY(R.string.book_sort_accuracy),
-    LATEST(R.string.book_sort_latest),
+enum class SearchSort(
+    @StringRes val labelRes: Int,
+    val bookSearchSort: BookSearchSort,
+) {
+    ACCURACY(R.string.book_sort_accuracy, BookSearchSort.ACCURACY),
+    LATEST(R.string.book_sort_latest, BookSearchSort.LATEST),
 }
 
-enum class FavoriteSort(@StringRes val labelRes: Int) {
-    TITLE_ASC(R.string.book_sort_title_asc),
-    TITLE_DESC(R.string.book_sort_title_desc),
+enum class FavoriteSort(
+    @StringRes val labelRes: Int,
+    val favoriteBookSort: FavoriteBookSort,
+) {
+    TITLE_ASC(R.string.book_sort_title_asc, FavoriteBookSort.TITLE_ASC),
+    TITLE_DESC(R.string.book_sort_title_desc, FavoriteBookSort.TITLE_DESC),
 }
 
 enum class PriceFilter(

@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyGridScope
@@ -36,6 +37,7 @@ fun SearchScreen(
     uiState: SearchUiState,
     onQueryChange: (String) -> Unit,
     onSearch: () -> Unit,
+    onKeywordClick: (String) -> Unit,
     onSortChange: (SearchSort) -> Unit,
     onBookClick: (BookUiModel) -> Unit,
     onFavoriteClick: (BookUiModel) -> Unit,
@@ -61,7 +63,7 @@ fun SearchScreen(
         },
     ) {
         when (val result = uiState.result) {
-            UiState.Idle -> MessageContent(stringResource(R.string.book_search_idle))
+            UiState.Idle -> RecommendedKeywords(onKeywordClick = onKeywordClick)
             UiState.Loading -> LoadingContent()
             UiState.Error -> ErrorContent(onRetry = onRetry)
             is UiState.Success -> if (result.data.books.isEmpty()) {
@@ -86,6 +88,7 @@ private fun LazyGridScope.appendFooter(append: AppendState, onRetry: () -> Unit)
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
+                    .heightIn(min = AppendFooterMinHeight)
                     .padding(16.dp),
                 contentAlignment = Alignment.Center,
             ) {
@@ -96,8 +99,9 @@ private fun LazyGridScope.appendFooter(append: AppendState, onRetry: () -> Unit)
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
+                    .heightIn(min = AppendFooterMinHeight)
                     .padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterVertically),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 Text(
@@ -113,6 +117,8 @@ private fun LazyGridScope.appendFooter(append: AppendState, onRetry: () -> Unit)
     }
 }
 
+private val AppendFooterMinHeight = 108.dp
+
 @Composable
 private fun SearchScreenPreview(uiState: SearchUiState) {
     MaterialTheme {
@@ -120,6 +126,7 @@ private fun SearchScreenPreview(uiState: SearchUiState) {
             uiState = uiState,
             onQueryChange = {},
             onSearch = {},
+            onKeywordClick = {},
             onSortChange = {},
             onBookClick = {},
             onFavoriteClick = {},
