@@ -24,9 +24,9 @@ import kotlinx.coroutines.flow.combineTransform
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flatMapLatest
-import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -74,15 +74,19 @@ class SearchViewModel @Inject constructor(
         }
     }
 
-    val uiState: StateFlow<SearchUiState> = combine(query, sort, searchResult) { query, sort, result ->
+    /**
+     * 입력이 멈추면 검색합니다. 글자를 칠 때마다 요청하지 않도록 잠시 기다립니다.
+     * [uiState]에 함께 묶어 화면이 구독하는 동안만 동작하게 합니다.
+     */
+    private val searchOnQueryChange: Flow<Unit> = query
+        .debounce(SEARCH_DEBOUNCE_MILLIS.milliseconds)
+        .onEach { search(SearchRequest(it.trim(), sort.value)) }
+        .map { Unit }
+        .onStart { emit(Unit) }
+
+    val uiState: StateFlow<SearchUiState> = combine(query, sort, searchResult, searchOnQueryChange) { query, sort, result, _ ->
         SearchUiState(query = query, sort = sort, result = result)
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), SearchUiState())
-
-    init {
-        query.debounce(SEARCH_DEBOUNCE_MILLIS.milliseconds)
-            .onEach { search(SearchRequest(it.trim(), sort.value)) }
-            .launchIn(viewModelScope)
-    }
 
     fun onQueryChange(query: String) {
         this.query.value = query
