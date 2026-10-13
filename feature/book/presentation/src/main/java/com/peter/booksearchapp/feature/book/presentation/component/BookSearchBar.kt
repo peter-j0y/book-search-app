@@ -20,11 +20,6 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.tooling.preview.Preview
 import com.peter.booksearchapp.feature.book.presentation.R
 
-/**
- * 둥근 회색 검색 입력창.
- *
- * @param onSearch 키보드의 검색 버튼을 눌렀을 때 호출된다. 입력할 때마다 검색하는 화면은 생략한다.
- */
 @Composable
 internal fun BookSearchBar(
     query: String,
@@ -33,6 +28,7 @@ internal fun BookSearchBar(
     onSearch: (() -> Unit)? = null,
 ) {
     val focusManager = LocalFocusManager.current
+
     TextField(
         value = query,
         onValueChange = onQueryChange,

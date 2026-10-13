@@ -17,6 +17,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.peter.booksearchapp.feature.book.presentation.model.UiState
 import com.peter.booksearchapp.feature.book.presentation.R
 import com.peter.booksearchapp.feature.book.presentation.component.BookList
 import com.peter.booksearchapp.feature.book.presentation.component.BookListHeader
@@ -30,11 +31,6 @@ import com.peter.booksearchapp.feature.book.presentation.model.BookUiModel
 import com.peter.booksearchapp.feature.book.presentation.model.SearchSort
 import com.peter.booksearchapp.feature.book.presentation.preview.PreviewBooks
 
-/**
- * 검색 탭 화면. 상태를 받아 그리기만 하고, 사용자 동작은 콜백으로 올린다.
- *
- * ViewModel과 연결하는 진입점 Composable은 ViewModel 작업 때 이 파일에 추가한다.
- */
 @Composable
 fun SearchScreen(
     uiState: SearchUiState,
@@ -65,22 +61,24 @@ fun SearchScreen(
         },
     ) {
         when (val result = uiState.result) {
-            SearchResult.Idle -> MessageContent(stringResource(R.string.book_search_idle))
-            SearchResult.Loading -> LoadingContent()
-            SearchResult.Empty -> MessageContent(stringResource(R.string.book_search_empty))
-            SearchResult.Error -> ErrorContent(onRetry = onRetry)
-            is SearchResult.Success -> BookList(
-                books = result.books,
-                onBookClick = onBookClick,
-                onFavoriteClick = onFavoriteClick,
-                onLoadMore = onLoadMore.takeIf { result.append == AppendState.Idle },
-                footer = { appendFooter(result.append, onRetry) },
-            )
+            UiState.Idle -> MessageContent(stringResource(R.string.book_search_idle))
+            UiState.Loading -> LoadingContent()
+            UiState.Error -> ErrorContent(onRetry = onRetry)
+            is UiState.Success -> if (result.data.books.isEmpty()) {
+                MessageContent(stringResource(R.string.book_search_empty))
+            } else {
+                BookList(
+                    books = result.data.books,
+                    onBookClick = onBookClick,
+                    onFavoriteClick = onFavoriteClick,
+                    onLoadMore = onLoadMore.takeIf { result.data.append == AppendState.Idle },
+                    footer = { appendFooter(result.data.append, onRetry) },
+                )
+            }
         }
     }
 }
 
-/** 다음 페이지 로딩 중이면 스피너를, 실패했으면 재시도 버튼을 리스트 맨 아래에 한 줄 전체로 붙인다. */
 private fun LazyGridScope.appendFooter(append: AppendState, onRetry: () -> Unit) {
     when (append) {
         AppendState.Idle, AppendState.End -> Unit
@@ -137,7 +135,7 @@ private fun SearchScreenSuccessPreview() {
     SearchScreenPreview(
         SearchUiState(
             query = "코틀린",
-            result = SearchResult.Success(books = PreviewBooks.books),
+            result = UiState.Success(SearchResult(books = PreviewBooks.books)),
         ),
     )
 }
@@ -149,9 +147,11 @@ private fun SearchScreenAppendLoadingPreview() {
         SearchUiState(
             query = "코틀린",
             sort = SearchSort.LATEST,
-            result = SearchResult.Success(
-                books = PreviewBooks.books.take(2),
-                append = AppendState.Loading,
+            result = UiState.Success(
+                SearchResult(
+                    books = PreviewBooks.books.take(2),
+                    append = AppendState.Loading,
+                ),
             ),
         ),
     )
@@ -163,9 +163,11 @@ private fun SearchScreenAppendErrorPreview() {
     SearchScreenPreview(
         SearchUiState(
             query = "코틀린",
-            result = SearchResult.Success(
-                books = PreviewBooks.books.take(2),
-                append = AppendState.Error,
+            result = UiState.Success(
+                SearchResult(
+                    books = PreviewBooks.books.take(2),
+                    append = AppendState.Error,
+                ),
             ),
         ),
     )
@@ -180,19 +182,24 @@ private fun SearchScreenIdlePreview() {
 @Preview(showBackground = true)
 @Composable
 private fun SearchScreenLoadingPreview() {
-    SearchScreenPreview(SearchUiState(query = "코틀린", result = SearchResult.Loading))
+    SearchScreenPreview(SearchUiState(query = "코틀린", result = UiState.Loading))
 }
 
 @Preview(showBackground = true)
 @Composable
 private fun SearchScreenEmptyPreview() {
-    SearchScreenPreview(SearchUiState(query = "없는 책 제목", result = SearchResult.Empty))
+    SearchScreenPreview(
+        SearchUiState(
+            query = "없는 책 제목",
+            result = UiState.Success(SearchResult(books = emptyList())),
+        ),
+    )
 }
 
 @Preview(showBackground = true)
 @Composable
 private fun SearchScreenErrorPreview() {
-    SearchScreenPreview(SearchUiState(query = "코틀린", result = SearchResult.Error))
+    SearchScreenPreview(SearchUiState(query = "코틀린", result = UiState.Error))
 }
 
 @Preview(showBackground = true, device = "spec:width=1280dp,height=800dp,dpi=240")
@@ -201,7 +208,7 @@ private fun SearchScreenTabletPreview() {
     SearchScreenPreview(
         SearchUiState(
             query = "코틀린",
-            result = SearchResult.Success(books = PreviewBooks.books),
+            result = UiState.Success(SearchResult(books = PreviewBooks.books)),
         ),
     )
 }

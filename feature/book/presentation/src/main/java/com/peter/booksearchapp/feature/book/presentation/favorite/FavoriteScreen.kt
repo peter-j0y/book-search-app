@@ -9,6 +9,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
+import com.peter.booksearchapp.feature.book.presentation.model.UiState
 import com.peter.booksearchapp.feature.book.presentation.R
 import com.peter.booksearchapp.feature.book.presentation.component.BookList
 import com.peter.booksearchapp.feature.book.presentation.component.BookListHeader
@@ -23,11 +24,6 @@ import com.peter.booksearchapp.feature.book.presentation.model.FavoriteSort
 import com.peter.booksearchapp.feature.book.presentation.model.PriceFilter
 import com.peter.booksearchapp.feature.book.presentation.preview.PreviewBooks
 
-/**
- * 즐겨찾기 탭 화면. 상태를 받아 그리기만 하고, 사용자 동작은 콜백으로 올린다.
- *
- * 로컬 데이터 안에서 검색하므로 키보드의 검색 버튼 없이 입력할 때마다 결과가 바뀐다.
- */
 @Composable
 fun FavoriteScreen(
     uiState: FavoriteUiState,
@@ -38,7 +34,6 @@ fun FavoriteScreen(
     onFavoriteClick: (BookUiModel) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    // 시트가 열려 있는지는 화면 안에서만 쓰는 상태라 ViewModel로 올리지 않는다.
     var showPriceFilter by rememberSaveable { mutableStateOf(false) }
 
     BookListScaffold(
@@ -64,14 +59,17 @@ fun FavoriteScreen(
         },
     ) {
         when (val result = uiState.result) {
-            FavoriteResult.Loading -> LoadingContent()
-            FavoriteResult.Empty -> MessageContent(stringResource(R.string.book_favorite_empty))
-            FavoriteResult.NoMatch -> MessageContent(stringResource(R.string.book_favorite_no_match))
-            is FavoriteResult.Success -> BookList(
-                books = result.books,
-                onBookClick = onBookClick,
-                onFavoriteClick = onFavoriteClick,
-            )
+            UiState.Idle, UiState.Loading -> LoadingContent()
+            UiState.Error -> MessageContent(stringResource(R.string.book_favorite_error))
+            is UiState.Success -> when {
+                result.data.isNotEmpty() -> BookList(
+                    books = result.data,
+                    onBookClick = onBookClick,
+                    onFavoriteClick = onFavoriteClick,
+                )
+                uiState.hasCondition -> MessageContent(stringResource(R.string.book_favorite_no_match))
+                else -> MessageContent(stringResource(R.string.book_favorite_empty))
+            }
         }
     }
 
@@ -84,7 +82,6 @@ fun FavoriteScreen(
     }
 }
 
-/** "오름차순(제목)" 또는 필터가 걸려 있으면 "오름차순(제목) · 1만원 미만". */
 @Composable
 private fun headerLabel(sort: FavoriteSort, priceFilter: PriceFilter): String {
     val sortLabel = stringResource(sort.labelRes)
@@ -114,7 +111,7 @@ private fun FavoriteScreenPreview(uiState: FavoriteUiState) {
 private fun FavoriteScreenSuccessPreview() {
     FavoriteScreenPreview(
         FavoriteUiState(
-            result = FavoriteResult.Success(PreviewBooks.books.map { it.copy(isFavorite = true) }),
+            result = UiState.Success(PreviewBooks.books.map { it.copy(isFavorite = true) }),
         ),
     )
 }
@@ -127,7 +124,7 @@ private fun FavoriteScreenFilteredPreview() {
             query = "코틀린",
             sort = FavoriteSort.TITLE_DESC,
             priceFilter = PriceFilter.OVER_30000,
-            result = FavoriteResult.Success(listOf(PreviewBooks.book)),
+            result = UiState.Success(listOf(PreviewBooks.book)),
         ),
     )
 }
@@ -135,7 +132,7 @@ private fun FavoriteScreenFilteredPreview() {
 @Preview(showBackground = true)
 @Composable
 private fun FavoriteScreenEmptyPreview() {
-    FavoriteScreenPreview(FavoriteUiState(result = FavoriteResult.Empty))
+    FavoriteScreenPreview(FavoriteUiState(result = UiState.Success(emptyList())))
 }
 
 @Preview(showBackground = true)
@@ -145,7 +142,7 @@ private fun FavoriteScreenNoMatchPreview() {
         FavoriteUiState(
             query = "없는 책",
             priceFilter = PriceFilter.UNDER_10000,
-            result = FavoriteResult.NoMatch,
+            result = UiState.Success(emptyList()),
         ),
     )
 }
@@ -155,7 +152,7 @@ private fun FavoriteScreenNoMatchPreview() {
 private fun FavoriteScreenTabletPreview() {
     FavoriteScreenPreview(
         FavoriteUiState(
-            result = FavoriteResult.Success(PreviewBooks.books.map { it.copy(isFavorite = true) }),
+            result = UiState.Success(PreviewBooks.books.map { it.copy(isFavorite = true) }),
         ),
     )
 }

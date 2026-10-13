@@ -23,15 +23,6 @@ import com.peter.booksearchapp.feature.book.presentation.preview.PreviewBooks
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filter
 
-/**
- * 도서 카드 리스트.
- *
- * 폰에서는 한 줄에 카드 하나, 태블릿·펼친 폴더블처럼 폭이 넓으면 [BookCardMinWidth] 기준으로
- * 여러 열을 놓는다. 화면 크기 분기를 따로 두지 않고 Adaptive 그리드 하나로 처리한다.
- *
- * @param onLoadMore 끝에서 [LoadMoreThreshold]개 이내까지 스크롤하면 호출된다. 페이징이 없으면 null.
- * @param footer 리스트 맨 아래에 붙일 항목(다음 페이지 로딩·재시도 등).
- */
 @Composable
 internal fun BookList(
     books: List<BookUiModel>,

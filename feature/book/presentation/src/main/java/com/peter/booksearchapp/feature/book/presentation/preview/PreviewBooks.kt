@@ -26,7 +26,7 @@ internal object PreviewBooks {
         authors = listOf("마르친 모스칼라"),
         publisher = "인사이트",
         publishedDate = "2022.01.05",
-        isbn = "1162241292 9791162241295",
+        isbn = "9791162241295",
         price = 28_000,
         salePrice = null,
         isFavorite = false,

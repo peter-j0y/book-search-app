@@ -12,7 +12,6 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 
-/** 표지 이미지. 로딩 중이거나 이미지가 없으면 회색 박스를 보여준다. */
 @Composable
 internal fun BookThumbnail(
     thumbnailUrl: String?,

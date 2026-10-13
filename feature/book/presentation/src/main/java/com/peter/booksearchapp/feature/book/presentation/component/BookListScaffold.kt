@@ -18,11 +18,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 
-/**
- * 검색 탭과 즐겨찾기 탭의 공통 뼈대. 제목 → 검색창 → 조건 줄 → 회색 배경의 리스트 영역 순서로 놓는다.
- *
- * 검색창과 조건 줄은 넓은 화면에서 너무 길게 늘어나지 않도록 [MaxSearchAreaWidth]로 폭을 제한한다.
- */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 internal fun BookListScaffold(

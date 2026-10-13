@@ -38,6 +38,8 @@
     <string name="book_search_empty">검색 결과가 없습니다.</string>
     <string name="book_favorite_empty">즐겨찾기한 도서가 없습니다.</string>
     <string name="book_favorite_no_match">조건에 맞는 즐겨찾기 도서가 없습니다.</string>
+    <string name="book_favorite_error">즐겨찾기를 불러오지 못했습니다.</string>
+    <string name="book_detail_error">도서 정보를 불러오지 못했습니다.</string>
     <string name="book_error_network">네트워크 연결이 불안정합니다.\n잠시 후 다시 시도해 주세요.</string>
     <string name="book_error_load_more">다음 페이지를 불러오지 못했습니다.</string>
     <string name="book_retry">다시 시도</string>

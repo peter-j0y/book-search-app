@@ -2,6 +2,7 @@ package com.peter.booksearchapp.feature.book.presentation.detail
 
 import androidx.annotation.StringRes
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
@@ -17,7 +18,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -30,21 +30,22 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.peter.booksearchapp.feature.book.presentation.model.UiState
 import com.peter.booksearchapp.feature.book.presentation.R
 import com.peter.booksearchapp.feature.book.presentation.component.BookThumbnail
 import com.peter.booksearchapp.feature.book.presentation.component.FavoriteButton
 import com.peter.booksearchapp.feature.book.presentation.component.LoadingContent
+import com.peter.booksearchapp.feature.book.presentation.component.MessageContent
 import com.peter.booksearchapp.feature.book.presentation.component.formatPrice
 import com.peter.booksearchapp.feature.book.presentation.component.labeledText
 import com.peter.booksearchapp.feature.book.presentation.component.orUnknown
 import com.peter.booksearchapp.feature.book.presentation.model.BookUiModel
 import com.peter.booksearchapp.feature.book.presentation.preview.PreviewBooks
 
-/** 도서 상세 화면. 상단 바에 뒤로 가기와 즐겨찾기 토글을 둔다. */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun BookDetailScreen(
-    uiState: BookDetailUiState,
+    uiState: UiState<BookUiModel>,
     onBackClick: () -> Unit,
     onFavoriteClick: (BookUiModel) -> Unit,
     modifier: Modifier = Modifier,
@@ -55,18 +56,17 @@ fun BookDetailScreen(
             TopAppBar(
                 title = {},
                 navigationIcon = {
-                    IconButton(onClick = onBackClick) {
-                        Icon(
-                            painter = painterResource(R.drawable.ic_arrow_back),
-                            contentDescription = stringResource(R.string.book_detail_back),
-                        )
-                    }
+                    Icon(
+                        modifier = Modifier.clickable { onBackClick() },
+                        painter = painterResource(R.drawable.ic_arrow_back),
+                        contentDescription = stringResource(R.string.book_detail_back),
+                    )
                 },
                 actions = {
-                    if (uiState is BookDetailUiState.Success) {
+                    if (uiState is UiState.Success) {
                         FavoriteButton(
-                            isFavorite = uiState.book.isFavorite,
-                            onClick = { onFavoriteClick(uiState.book) },
+                            isFavorite = uiState.data.isFavorite,
+                            onClick = { onFavoriteClick(uiState.data) },
                         )
                     }
                 },
@@ -74,21 +74,24 @@ fun BookDetailScreen(
         },
     ) { innerPadding ->
         when (uiState) {
-            BookDetailUiState.Loading -> LoadingContent(Modifier.padding(innerPadding))
-            is BookDetailUiState.Success -> BookDetailContent(
-                book = uiState.book,
+            UiState.Idle, UiState.Loading -> LoadingContent(Modifier.padding(innerPadding))
+            UiState.Error -> MessageContent(
+                message = stringResource(R.string.book_detail_error),
+                modifier = Modifier.padding(innerPadding),
+            )
+            is UiState.Success -> BookDetailContent(
+                book = uiState.data,
                 modifier = Modifier.padding(innerPadding),
             )
         }
     }
 }
 
-/**
- * 폭이 좁으면 디자인대로 제목 → 표지·정보 → 책 소개를 세로로 쌓고,
- * 태블릿·펼친 폴더블처럼 넓으면 왼쪽에 표지, 오른쪽에 제목·정보·책 소개를 놓는다.
- */
 @Composable
-private fun BookDetailContent(book: BookUiModel, modifier: Modifier = Modifier) {
+private fun BookDetailContent(
+    book: BookUiModel,
+    modifier: Modifier = Modifier,
+) {
     BoxWithConstraints(
         modifier = modifier
             .fillMaxSize()
@@ -202,7 +205,7 @@ private val ExpandedCoverWidth = 280.dp
 private const val CoverAspectRatio = 120f / 174f
 
 @Composable
-private fun BookDetailScreenPreview(uiState: BookDetailUiState) {
+private fun BookDetailScreenPreview(uiState: UiState<BookUiModel>) {
     MaterialTheme {
         BookDetailScreen(uiState = uiState, onBackClick = {}, onFavoriteClick = {})
     }
@@ -211,23 +214,29 @@ private fun BookDetailScreenPreview(uiState: BookDetailUiState) {
 @Preview(showBackground = true)
 @Composable
 private fun BookDetailScreenSuccessPreview() {
-    BookDetailScreenPreview(BookDetailUiState.Success(PreviewBooks.book))
+    BookDetailScreenPreview(UiState.Success(PreviewBooks.book))
 }
 
 @Preview(showBackground = true)
 @Composable
 private fun BookDetailScreenNoInfoPreview() {
-    BookDetailScreenPreview(BookDetailUiState.Success(PreviewBooks.noInfoBook))
+    BookDetailScreenPreview(UiState.Success(PreviewBooks.noInfoBook))
 }
 
 @Preview(showBackground = true)
 @Composable
 private fun BookDetailScreenLoadingPreview() {
-    BookDetailScreenPreview(BookDetailUiState.Loading)
+    BookDetailScreenPreview(UiState.Loading)
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun BookDetailScreenErrorPreview() {
+    BookDetailScreenPreview(UiState.Error)
 }
 
 @Preview(showBackground = true, device = "spec:width=1280dp,height=800dp,dpi=240")
 @Composable
 private fun BookDetailScreenTabletPreview() {
-    BookDetailScreenPreview(BookDetailUiState.Success(PreviewBooks.longTitleBook))
+    BookDetailScreenPreview(UiState.Success(PreviewBooks.longTitleBook))
 }

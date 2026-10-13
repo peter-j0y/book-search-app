@@ -23,7 +23,6 @@ import androidx.compose.ui.unit.dp
 import com.peter.booksearchapp.feature.book.presentation.R
 import com.peter.booksearchapp.feature.book.presentation.model.PriceFilter
 
-/** 금액 필터를 고르는 바텀시트. 하나를 고르면 바로 적용하고 닫는다. */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 internal fun PriceFilterSheet(
