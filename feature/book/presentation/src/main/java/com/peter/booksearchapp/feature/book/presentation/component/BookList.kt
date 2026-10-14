@@ -13,10 +13,6 @@ import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.rememberUpdatedState
-import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.Dp
@@ -24,13 +20,12 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.peter.booksearchapp.feature.book.presentation.model.BookUiModel
 import com.peter.booksearchapp.feature.book.presentation.preview.PreviewBooks
-import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.flow.filter
 
 /**
  * 도서 카드 목록. 화면 너비에 따라 열 개수가 바뀝니다.
  *
  * @param contentPadding 시스템 바 등을 피하기 위한 여백. 목록의 기본 여백에 더해집니다.
+ * @param canLoadMore 다음 페이지를 요청해도 되는지. true인 동안 목록 끝 근처까지 스크롤하면 [onLoadMore]를 부릅니다.
  */
 @Composable
 internal fun BookList(
@@ -40,23 +35,11 @@ internal fun BookList(
     modifier: Modifier = Modifier,
     contentPadding: PaddingValues = PaddingValues(),
     state: LazyGridState = rememberLazyGridState(),
-    onLoadMore: (() -> Unit)? = null,
+    canLoadMore: Boolean = false,
+    onLoadMore: () -> Unit = {},
     footer: (LazyGridScope.() -> Unit)? = null,
 ) {
-    if (onLoadMore != null) {
-        val currentOnLoadMore by rememberUpdatedState(onLoadMore)
-        LaunchedEffect(state) {
-            snapshotFlow {
-                val layoutInfo = state.layoutInfo
-                val lastVisibleIndex = layoutInfo.visibleItemsInfo.lastOrNull()?.index ?: 0
-                layoutInfo.totalItemsCount > 0 &&
-                    lastVisibleIndex >= layoutInfo.totalItemsCount - LoadMoreThreshold
-            }
-                .distinctUntilChanged()
-                .filter { it }
-                .collect { currentOnLoadMore() }
-        }
-    }
+    state.LoadMoreEffect(canLoadMore = canLoadMore, onLoadMore = onLoadMore)
 
     LazyVerticalGrid(
         columns = GridCells.Adaptive(minSize = BookCardMinWidth),
@@ -91,7 +74,6 @@ private fun PaddingValues.plus(padding: Dp): PaddingValues {
         bottom = calculateBottomPadding() + padding,
     )
 }
-private const val LoadMoreThreshold = 5
 
 @Preview(showBackground = true, backgroundColor = 0xFFE6E6E6)
 @Composable
