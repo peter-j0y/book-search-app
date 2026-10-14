@@ -11,10 +11,13 @@ import com.peter.booksearchapp.feature.book.presentation.model.BookUiModel
 import com.peter.booksearchapp.feature.book.presentation.model.SearchSort
 import com.peter.booksearchapp.feature.book.presentation.model.UiState
 import com.peter.booksearchapp.feature.book.presentation.model.toUiModel
+import com.peter.booksearchapp.feature.book.presentation.paging.PageLoader
+import com.peter.booksearchapp.feature.book.presentation.paging.PageResult
+import com.peter.booksearchapp.feature.book.presentation.paging.Paginator
+import com.peter.booksearchapp.feature.book.presentation.paging.RefreshState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -41,36 +44,35 @@ class SearchViewModel @Inject constructor(
 ) : ViewModel() {
     private val query = MutableStateFlow("")
     private val sort = MutableStateFlow(SearchSort.ACCURACY)
-    private val searchedBooks = MutableStateFlow<UiState<SearchedBooks>>(UiState.Idle)
+    private val paginator = Paginator<Int, Book>(viewModelScope, SearchBooksUseCase.PAGE_SIZE, itemKey = Book::isbn)
     private var lastRequest: SearchRequest? = null
-    private var searchJob: Job? = null
 
     /**
      * 화면에 있는 책들의 즐겨찾기 여부만 구독해 다른 화면에서 바꾼 즐겨찾기도 바로 반영합니다.
      * 다음 페이지 로딩 상태만 바뀔 때는 다시 구독하지 않도록, 책 목록(ISBN)이 바뀔 때만 구독을 새로 맺습니다.
      */
     @OptIn(ExperimentalCoroutinesApi::class)
-    private val favoriteIsbns: Flow<FavoriteIsbns> = searchedBooks
-        .map { state -> (state as? UiState.Success)?.data?.books?.map { it.isbn }.orEmpty() }
+    private val favoriteIsbns: Flow<FavoriteIsbns> = paginator.state
+        .map { state -> state.items.map { it.isbn } }
         .distinctUntilChanged()
         .flatMapLatest { isbns -> observeFavoriteIsbns(isbns).map { FavoriteIsbns(isbns = isbns, favorites = it) } }
 
-    private val searchResult: Flow<UiState<SearchResult>> = combineTransform(searchedBooks, favoriteIsbns) { state, favoriteIsbns ->
-        when (state) {
-            is UiState.Success -> {
-                if (favoriteIsbns.isbns != state.data.books.map { it.isbn }) return@combineTransform
+    private val searchResult: Flow<UiState<SearchResult>> = combineTransform(paginator.state, favoriteIsbns) { state, favoriteIsbns ->
+        when (state.refreshState) {
+            RefreshState.Loaded -> {
+                if (favoriteIsbns.isbns != state.items.map { it.isbn }) return@combineTransform
                 emit(
                     UiState.Success(
                         SearchResult(
-                            books = state.data.books.map { it.toUiModel(isFavorite = it.isbn in favoriteIsbns.favorites) },
-                            append = state.data.append,
+                            books = state.items.map { it.toUiModel(isFavorite = it.isbn in favoriteIsbns.favorites) },
+                            append = state.appendState,
                         ),
                     ),
                 )
             }
-            UiState.Idle -> emit(UiState.Idle)
-            UiState.Loading -> emit(UiState.Loading)
-            UiState.Error -> emit(UiState.Error)
+            RefreshState.NotLoaded -> emit(UiState.Idle)
+            RefreshState.Loading -> emit(UiState.Loading)
+            RefreshState.Error -> emit(UiState.Error)
         }
     }
 
@@ -111,39 +113,14 @@ class SearchViewModel @Inject constructor(
         search(SearchRequest(query, sort))
     }
 
-    /**
-     * 현재 검색 결과의 다음 페이지를 불러와 목록 뒤에 붙입니다.
-     * 검색 결과가 없거나, 이미 다음 페이지를 불러오는 중이거나, 마지막 페이지까지 불러왔다면 아무것도 하지 않습니다.
-     * 직전 다음 페이지 요청이 실패한 상태라면 같은 페이지를 다시 요청합니다.
-     * 카카오 API는 같은 책을 판매처별로 따로 내려주기도 해서(ISBN은 같고 출판사 · 가격만 다름), 앞 페이지에 있던 책이
-     * 다음 페이지에 다시 올 수 있습니다. 목록이 ISBN을 키로 쓰기 때문에 ISBN 기준으로 중복을 걸러냅니다.
-     */
+    /** 현재 검색 결과의 다음 페이지를 불러와 목록 뒤에 붙입니다. 같은 책이 다시 오면 ISBN 기준으로 걸러냅니다([Paginator] 참고). */
     fun onLoadMore() {
-        val current = (searchedBooks.value as? UiState.Success)?.data ?: return
-        if (current.append.canLoadMore.not()) return
-
-        searchJob = viewModelScope.launch {
-            searchedBooks.value = UiState.Success(current.copy(append = AppendState.Loading))
-            val nextPage = current.page + 1
-            searchedBooks.value = when (val response = searchBooks(current.request.query, current.request.sort.bookSearchSort, nextPage)) {
-                is ApiResponse.Success -> UiState.Success(
-                    current.copy(
-                        books = (current.books + response.data.books).distinctBy { it.isbn },
-                        page = nextPage,
-                        append = if (response.data.isEnd) AppendState.End else AppendState.Idle,
-                    ),
-                )
-                is ApiResponse.Failure -> UiState.Success(current.copy(append = AppendState.Error))
-            }
-        }
+        paginator.loadMore()
     }
 
+    /** 실패한 요청을 다시 합니다. 첫 페이지가 실패했으면 같은 조건으로 처음부터, 다음 페이지가 실패했으면 그 페이지를 다시 요청합니다. */
     fun onRetry() {
-        when (val current = searchedBooks.value) {
-            UiState.Error -> lastRequest?.let(::search)
-            is UiState.Success -> if (current.data.append == AppendState.Error) onLoadMore()
-            UiState.Idle, UiState.Loading -> Unit
-        }
+        paginator.retry()
     }
 
     fun onFavoriteClick(book: BookUiModel) {
@@ -151,8 +128,7 @@ class SearchViewModel @Inject constructor(
         viewModelScope.launch { setFavorite(target, isFavorite = !book.isFavorite) }
     }
 
-    fun findBook(id: String): Book? =
-        (searchedBooks.value as? UiState.Success)?.data?.books?.firstOrNull { it.isbn == id }
+    fun findBook(id: String): Book? = paginator.state.value.items.firstOrNull { it.isbn == id }
 
     /**
      * 같은 조건으로 이미 요청했다면 다시 요청하지 않습니다.
@@ -163,24 +139,25 @@ class SearchViewModel @Inject constructor(
      */
     private fun search(request: SearchRequest, retryIfFailed: Boolean = true) {
         if (request.query.isEmpty()) return
-        val canRetry = retryIfFailed && searchedBooks.value == UiState.Error
+        val canRetry = retryIfFailed && paginator.state.value.refreshState == RefreshState.Error
         if (request == lastRequest && !canRetry) return
         lastRequest = request
-        searchJob?.cancel()
+        paginator.refresh(loader = searchLoader(request))
+    }
 
-        searchJob = viewModelScope.launch {
-            searchedBooks.value = UiState.Loading
-            searchedBooks.value = when (val response = searchBooks(request.query, request.sort.bookSearchSort, FIRST_PAGE)) {
-                is ApiResponse.Success -> UiState.Success(
-                    SearchedBooks(
-                        request = request,
-                        books = response.data.books.distinctBy { it.isbn },
-                        page = FIRST_PAGE,
-                        append = if (response.data.isEnd) AppendState.End else AppendState.Idle,
-                    ),
-                )
-                is ApiResponse.Failure -> UiState.Error
-            }
+    /**
+     * [request] 조건으로 검색 결과를 페이지 번호 단위로 불러옵니다. 첫 페이지는 1이고, 마지막 페이지가 아니면 다음 번호를 다음 키로 넘깁니다.
+     * 카카오 API는 같은 책을 판매처별로 따로 내려주기도 해서(ISBN은 같고 출판사 · 가격만 다름) 같은 책이 다시 올 수 있는데,
+     * [Paginator]가 ISBN 기준으로 걸러냅니다.
+     */
+    private fun searchLoader(request: SearchRequest) = PageLoader<Int, Book> { page, size ->
+        val currentPage = page ?: FIRST_PAGE
+        when (val response = searchBooks(request.query, request.sort.bookSearchSort, currentPage, size)) {
+            is ApiResponse.Success -> PageResult.Success(
+                items = response.data.books,
+                nextKey = if (response.data.isEnd) null else currentPage + 1,
+            )
+            is ApiResponse.Failure -> PageResult.Error
         }
     }
 
@@ -194,12 +171,6 @@ class SearchViewModel @Inject constructor(
         val sort: SearchSort,
     )
 
-    private data class SearchedBooks(
-        val request: SearchRequest,
-        val books: List<Book>,
-        val page: Int,
-        val append: AppendState,
-    )
 
     private companion object {
         const val FIRST_PAGE = 1

@@ -24,7 +24,7 @@ internal class BookLocalDataSource @Inject constructor(
         return when (sort) {
             FavoriteBookSort.TITLE_ASC -> favoriteBookDao.getFavoriteBooksByTitleAsc(
                 afterTitle = after?.title,
-                afterId = after?.id,
+                afterIsbn = after?.isbn,
                 query = escapedQuery,
                 minPrice = minPrice,
                 maxPrice = maxPrice,
@@ -32,7 +32,7 @@ internal class BookLocalDataSource @Inject constructor(
             )
             FavoriteBookSort.TITLE_DESC -> favoriteBookDao.getFavoriteBooksByTitleDesc(
                 afterTitle = after?.title,
-                afterId = after?.id,
+                afterIsbn = after?.isbn,
                 query = escapedQuery,
                 minPrice = minPrice,
                 maxPrice = maxPrice,

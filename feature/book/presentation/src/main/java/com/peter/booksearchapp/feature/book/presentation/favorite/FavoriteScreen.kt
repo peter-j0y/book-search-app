@@ -70,6 +70,7 @@ fun FavoriteScreen(
                     books = result.data,
                     onBookClick = onBookClick,
                     onFavoriteClick = onFavoriteClick,
+                    canLoadMore = true,
                     onLoadMore = onLoadMore,
                 )
                 uiState.hasCondition -> MessageContent(stringResource(R.string.book_favorite_no_match), paddingModifier)

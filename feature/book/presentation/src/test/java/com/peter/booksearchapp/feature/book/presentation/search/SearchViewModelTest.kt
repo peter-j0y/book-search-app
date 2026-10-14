@@ -14,6 +14,7 @@ import com.peter.booksearchapp.feature.book.presentation.MainDispatcherRule
 import com.peter.booksearchapp.feature.book.presentation.isbn
 import com.peter.booksearchapp.feature.book.presentation.model.SearchSort
 import com.peter.booksearchapp.feature.book.presentation.model.UiState
+import com.peter.booksearchapp.feature.book.presentation.paging.AppendState
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch

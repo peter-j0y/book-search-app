@@ -30,6 +30,7 @@ import com.peter.booksearchapp.feature.book.presentation.component.MessageConten
 import com.peter.booksearchapp.feature.book.presentation.component.SortMenuButton
 import com.peter.booksearchapp.feature.book.presentation.model.BookUiModel
 import com.peter.booksearchapp.feature.book.presentation.model.SearchSort
+import com.peter.booksearchapp.feature.book.presentation.paging.AppendState
 import com.peter.booksearchapp.feature.book.presentation.preview.PreviewBooks
 
 @Composable
@@ -75,7 +76,8 @@ fun SearchScreen(
                     books = result.data.books,
                     onBookClick = onBookClick,
                     onFavoriteClick = onFavoriteClick,
-                    onLoadMore = onLoadMore.takeIf { result.data.append == AppendState.Idle },
+                    canLoadMore = result.data.append == AppendState.Idle,
+                    onLoadMore = onLoadMore,
                     footer = { appendFooter(result.data.append, onRetry) },
                 )
             }

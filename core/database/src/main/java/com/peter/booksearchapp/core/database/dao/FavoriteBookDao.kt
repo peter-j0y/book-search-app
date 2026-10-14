@@ -13,25 +13,25 @@ private const val SELLING_PRICE = "CASE WHEN sale_price >= 0 THEN sale_price ELS
 interface FavoriteBookDao {
     /**
      * 즐겨찾기를 제목순으로 limit개씩 가져옵니다.
-     * - afterTitle, afterId: 직전 페이지의 마지막 책. 이 책 다음부터 가져옵니다. 첫 페이지는 null.
-     *   제목이 같은 책이 있을 수 있어서 id까지 함께 비교합니다.
+     * - afterTitle, afterIsbn: 직전 페이지의 마지막 책. 이 책 다음부터 가져옵니다. 첫 페이지는 null.
+     *   제목이 같은 책이 있을 수 있어서 isbn까지 함께 비교합니다.
      * - query, minPrice, maxPrice: null이면 그 조건은 적용하지 않습니다.
      * - 금액은 할인가가 있으면 할인가, 없으면 정가로 비교합니다. (minPrice 이상, maxPrice 미만)
      */
     @Query(
         """
         SELECT * FROM favorite_books
-        WHERE (:afterTitle IS NULL OR title > :afterTitle OR (title = :afterTitle AND id > :afterId))
+        WHERE (:afterTitle IS NULL OR title > :afterTitle OR (title = :afterTitle AND isbn > :afterIsbn))
           AND (:query IS NULL OR title LIKE '%' || :query || '%' ESCAPE '\')
           AND (:minPrice IS NULL OR $SELLING_PRICE >= :minPrice)
           AND (:maxPrice IS NULL OR $SELLING_PRICE < :maxPrice)
-        ORDER BY title ASC, id ASC
+        ORDER BY title ASC, isbn ASC
         LIMIT :limit
         """,
     )
     suspend fun getFavoriteBooksByTitleAsc(
         afterTitle: String?,
-        afterId: Long?,
+        afterIsbn: String?,
         query: String?,
         minPrice: Int?,
         maxPrice: Int?,
@@ -42,17 +42,17 @@ interface FavoriteBookDao {
     @Query(
         """
         SELECT * FROM favorite_books
-        WHERE (:afterTitle IS NULL OR title <:afterTitle OR (title = :afterTitle AND id < :afterId))
+        WHERE (:afterTitle IS NULL OR title <:afterTitle OR (title = :afterTitle AND isbn < :afterIsbn))
           AND (:query IS NULL OR title LIKE '%' || :query || '%' ESCAPE '\')
           AND (:minPrice IS NULL OR $SELLING_PRICE >= :minPrice)
           AND (:maxPrice IS NULL OR $SELLING_PRICE < :maxPrice)
-        ORDER BY title DESC, id DESC
+        ORDER BY title DESC, isbn DESC
         LIMIT :limit
         """,
     )
     suspend fun getFavoriteBooksByTitleDesc(
         afterTitle: String?,
-        afterId: Long?,
+        afterIsbn: String?,
         query: String?,
         minPrice: Int?,
         maxPrice: Int?,

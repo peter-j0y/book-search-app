@@ -87,16 +87,16 @@ class BookMapperTest {
 
     @Test
     fun `즐겨찾기를 요청한 개수만큼 받으면 마지막 책이 다음 커서가 된다`() {
-        val entities = listOf(entity(id = 1, title = "A"), entity(id = 2, title = "B"))
+        val entities = listOf(entity(isbn = "9788937460441", title = "A"), entity(isbn = "9788937460442", title = "B"))
 
         val page = entities.toFavoriteBookPage(requestedSize = 2)
 
-        assertEquals(FavoriteBookCursor(title = "B", id = 2), page.nextCursor)
+        assertEquals(FavoriteBookCursor(title = "B", isbn = "9788937460442"), page.nextCursor)
     }
 
     @Test
     fun `즐겨찾기를 요청한 개수보다 적게 받으면 다음 커서가 없다`() {
-        val page = listOf(entity(id = 1, title = "A")).toFavoriteBookPage(requestedSize = 2)
+        val page = listOf(entity(isbn = "9788937460441", title = "A")).toFavoriteBookPage(requestedSize = 2)
 
         assertNull(page.nextCursor)
     }
@@ -134,12 +134,11 @@ class BookMapperTest {
         status = "정상판매",
     )
 
-    private fun entity(id: Long, title: String) = FavoriteBookEntity(
-        id = id,
+    private fun entity(isbn: String, title: String) = FavoriteBookEntity(
+        isbn = isbn,
         title = title,
         contents = null,
         url = null,
-        isbn = "978893746044$id",
         datetime = null,
         authors = null,
         publisher = null,

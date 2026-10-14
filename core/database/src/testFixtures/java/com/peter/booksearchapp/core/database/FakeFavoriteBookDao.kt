@@ -15,7 +15,6 @@ import kotlinx.coroutines.flow.update
  */
 class FakeFavoriteBookDao : FavoriteBookDao {
     private val books = MutableStateFlow<List<FavoriteBookEntity>>(emptyList())
-    private var nextId = 1L
 
     /** 지금 저장된 즐겨찾기 */
     val favoriteBooks: List<FavoriteBookEntity>
@@ -26,29 +25,27 @@ class FakeFavoriteBookDao : FavoriteBookDao {
 
     override suspend fun getFavoriteBooksByTitleAsc(
         afterTitle: String?,
-        afterId: Long?,
+        afterIsbn: String?,
         query: String?,
         minPrice: Int?,
         maxPrice: Int?,
         limit: Int,
-    ): List<FavoriteBookEntity> = findBooks(afterTitle, afterId, query, minPrice, maxPrice, limit, descending = false)
+    ): List<FavoriteBookEntity> = findBooks(afterTitle, afterIsbn, query, minPrice, maxPrice, limit, descending = false)
 
     override suspend fun getFavoriteBooksByTitleDesc(
         afterTitle: String?,
-        afterId: Long?,
+        afterIsbn: String?,
         query: String?,
         minPrice: Int?,
         maxPrice: Int?,
         limit: Int,
-    ): List<FavoriteBookEntity> = findBooks(afterTitle, afterId, query, minPrice, maxPrice, limit, descending = true)
+    ): List<FavoriteBookEntity> = findBooks(afterTitle, afterIsbn, query, minPrice, maxPrice, limit, descending = true)
 
     override fun observeFavoriteIsbns(isbns: List<String>): Flow<List<String>> =
-        books.map { list -> list.mapNotNull { it.isbn }.filter { it in isbns } }
+        books.map { list -> list.map { it.isbn }.filter { it in isbns } }
 
     override suspend fun insert(book: FavoriteBookEntity) {
-        if (books.value.any { it.isbn == book.isbn }) return
-        val id = nextId++
-        books.update { it + book.copy(id = id) }
+        books.update { list -> if (list.any { it.isbn == book.isbn }) list else list + book }
     }
 
     override suspend fun deleteByIsbn(isbn: String) {
@@ -57,29 +54,31 @@ class FakeFavoriteBookDao : FavoriteBookDao {
 
     private fun findBooks(
         afterTitle: String?,
-        afterId: Long?,
+        afterIsbn: String?,
         query: String?,
         minPrice: Int?,
         maxPrice: Int?,
         limit: Int,
         descending: Boolean,
     ): List<FavoriteBookEntity> {
-        val byTitle = compareBy<FavoriteBookEntity>({ it.title }, { it.id })
+        val byTitle = compareBy<FavoriteBookEntity>({ it.title }, { it.isbn })
         val keyword = query?.unescapeLikePattern()
         return books.value
-            .sortedWith(if (descending) byTitle.reversed() else byTitle)
-            .filter { afterTitle == null || it.isAfter(afterTitle, afterId ?: 0, descending) }
+            .asSequence()
+            .filter { afterTitle == null || it.isAfter(afterTitle, afterIsbn.orEmpty(), descending) }
             .filter { keyword == null || it.title.contains(keyword, ignoreCase = true) }
             .filter { minPrice == null || it.sellingPrice?.let { price -> price >= minPrice } == true }
             .filter { maxPrice == null || it.sellingPrice?.let { price -> price < maxPrice } == true }
+            .sortedWith(if (descending) byTitle.reversed() else byTitle)
             .take(limit)
+            .toList()
     }
 
-    private fun FavoriteBookEntity.isAfter(afterTitle: String, afterId: Long, descending: Boolean): Boolean =
+    private fun FavoriteBookEntity.isAfter(afterTitle: String, afterIsbn: String, descending: Boolean): Boolean =
         if (descending) {
-            title < afterTitle || (title == afterTitle && id < afterId)
+            title < afterTitle || (title == afterTitle && isbn < afterIsbn)
         } else {
-            title > afterTitle || (title == afterTitle && id > afterId)
+            title > afterTitle || (title == afterTitle && isbn > afterIsbn)
         }
 
     /** DAO 쿼리와 같이 할인가가 있으면 할인가, 없으면 정가로 비교합니다. */

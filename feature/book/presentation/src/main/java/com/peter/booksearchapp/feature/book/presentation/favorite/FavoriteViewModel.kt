@@ -12,10 +12,13 @@ import com.peter.booksearchapp.feature.book.presentation.model.FavoriteSort
 import com.peter.booksearchapp.feature.book.presentation.model.PriceFilter
 import com.peter.booksearchapp.feature.book.presentation.model.UiState
 import com.peter.booksearchapp.feature.book.presentation.model.toUiModel
+import com.peter.booksearchapp.feature.book.presentation.paging.PageLoader
+import com.peter.booksearchapp.feature.book.presentation.paging.PageResult
+import com.peter.booksearchapp.feature.book.presentation.paging.Paginator
+import com.peter.booksearchapp.feature.book.presentation.paging.RefreshState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -25,7 +28,7 @@ import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.mapLatest
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -41,8 +44,8 @@ class FavoriteViewModel @Inject constructor(
     private val query = MutableStateFlow("")
     private val sort = MutableStateFlow(FavoriteSort.TITLE_ASC)
     private val priceFilter = MutableStateFlow(PriceFilter.ALL)
-    private val favorites = MutableStateFlow<UiState<FavoriteBooks>>(UiState.Loading)
-    private var loadMoreJob: Job? = null
+    private val paginator = Paginator<FavoriteBookCursor, Book>(viewModelScope, GetFavoriteBooksUseCase.PAGE_SIZE, itemKey = Book::isbn)
+    private var loadedCondition: FavoriteCondition? = null
 
     /**
      * 즐겨찾기 목록을 다시 불러오는 흐름입니다. 아래 두 경우에 다시 불러옵니다.
@@ -59,25 +62,25 @@ class FavoriteViewModel @Inject constructor(
     ) { query, sort, priceFilter -> FavoriteCondition(query.trim(), sort, priceFilter) }
         .distinctUntilChanged()
         .flatMapLatest { condition -> bookRepository.observeFavoriteTableChanges().map { condition } }
-        .mapLatest { reload(it) }
+        .onEach { reload(it) }
+        .map { Unit }
         .onStart { emit(Unit) }
 
     val uiState: StateFlow<FavoriteUiState> = combine(
         query,
         sort,
         priceFilter,
-        favorites,
+        paginator.state,
         reloadOnChange,
     ) { query, sort, priceFilter, favorites, _ ->
         FavoriteUiState(
             query = query,
             sort = sort,
             priceFilter = priceFilter,
-            result = when (favorites) {
-                is UiState.Success -> UiState.Success(favorites.data.books.map { it.toUiModel(isFavorite = true) })
-                UiState.Idle -> UiState.Idle
-                UiState.Loading -> UiState.Loading
-                UiState.Error -> UiState.Error
+            result = when (favorites.refreshState) {
+                RefreshState.Loaded -> UiState.Success(favorites.items.map { it.toUiModel(isFavorite = true) })
+                RefreshState.NotLoaded, RefreshState.Loading -> UiState.Loading
+                RefreshState.Error -> UiState.Error
             },
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), FavoriteUiState())
@@ -95,19 +98,7 @@ class FavoriteViewModel @Inject constructor(
     }
 
     fun onLoadMore() {
-        val current = (favorites.value as? UiState.Success)?.data ?: return
-        val cursor = current.nextCursor ?: return
-        if (loadMoreJob?.isActive == true) return
-
-        loadMoreJob = viewModelScope.launch {
-            val page = load(current.condition, after = cursor, size = GetFavoriteBooksUseCase.PAGE_SIZE)
-            favorites.value = UiState.Success(
-                current.copy(
-                    books = (current.books + page.books).distinctBy { it.isbn },
-                    nextCursor = page.nextCursor,
-                ),
-            )
-        }
+        paginator.loadMore()
     }
 
     fun onFavoriteClick(book: BookUiModel) {
@@ -115,8 +106,7 @@ class FavoriteViewModel @Inject constructor(
         viewModelScope.launch { setFavorite(target, isFavorite = !book.isFavorite) }
     }
 
-    fun findBook(id: String): Book? =
-        (favorites.value as? UiState.Success)?.data?.books?.firstOrNull { it.isbn == id }
+    fun findBook(id: String): Book? = paginator.state.value.items.firstOrNull { it.isbn == id }
 
     /**
      * 즐겨찾기 목록을 첫 페이지부터 다시 불러옵니다.
@@ -124,39 +114,36 @@ class FavoriteViewModel @Inject constructor(
      * - 조건은 그대로이고 즐겨찾기만 바뀌었을 때: 지금까지 불러온 개수만큼 한 번에 다시 불러옵니다.
      *   첫 페이지만 불러오면 스크롤해서 보던 아래쪽 목록이 사라지기 때문입니다.
      *
-     * 다시 불러온 목록으로 통째로 바꾸기 때문에, 진행 중이던 다음 페이지 불러오기는 취소합니다.
+     * 불러오는 동안에도 기존 목록을 그대로 보여주고, 다 불러오면 새 목록으로 통째로 바꿉니다.
+     * 진행 중이던 다음 페이지 불러오기는 취소합니다([Paginator.refresh] 참고).
      */
-    private suspend fun reload(condition: FavoriteCondition) {
-        loadMoreJob?.cancel()
-        val current = (favorites.value as? UiState.Success)?.data
-        val size = if (current?.condition == condition) {
-            maxOf(current.books.size, GetFavoriteBooksUseCase.PAGE_SIZE)
+    private fun reload(condition: FavoriteCondition) {
+        val loadSize = if (condition == loadedCondition) {
+            maxOf(paginator.state.value.items.size, GetFavoriteBooksUseCase.PAGE_SIZE)
         } else {
             GetFavoriteBooksUseCase.PAGE_SIZE
         }
-        val page = load(condition, after = null, size = size)
-        favorites.value = UiState.Success(FavoriteBooks(condition, page.books, page.nextCursor))
+        loadedCondition = condition
+        paginator.refresh(loader = favoriteLoader(condition), loadSize = loadSize, keepItems = true)
     }
 
-    private suspend fun load(condition: FavoriteCondition, after: FavoriteBookCursor?, size: Int) = getFavoriteBooks(
-        sort = condition.sort.favoriteBookSort,
-        after = after,
-        query = condition.query,
-        minPrice = condition.priceFilter.minPrice,
-        maxPrice = condition.priceFilter.maxPrice,
-        size = size,
-    )
+    /** [condition]에 맞는 즐겨찾기를 커서 단위로 불러옵니다. 첫 페이지는 커서 없이, 다음 페이지는 직전 페이지의 마지막 책 다음부터 불러옵니다. */
+    private fun favoriteLoader(condition: FavoriteCondition) = PageLoader<FavoriteBookCursor, Book> { cursor, size ->
+        val page = getFavoriteBooks(
+            sort = condition.sort.favoriteBookSort,
+            after = cursor,
+            query = condition.query,
+            minPrice = condition.priceFilter.minPrice,
+            maxPrice = condition.priceFilter.maxPrice,
+            size = size,
+        )
+        PageResult.Success(items = page.books, nextKey = page.nextCursor)
+    }
 
     private data class FavoriteCondition(
         val query: String,
         val sort: FavoriteSort,
         val priceFilter: PriceFilter,
-    )
-
-    private data class FavoriteBooks(
-        val condition: FavoriteCondition,
-        val books: List<Book>,
-        val nextCursor: FavoriteBookCursor?,
     )
 
     private companion object {
