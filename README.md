@@ -55,7 +55,17 @@ KAKAO_API_KEY=발급받은_REST_API_키
 
 키가 없어도 빌드는 성공하지만, 검색 요청이 인증 오류(401)로 실패합니다.
 
-### 2. 빌드 · 실행
+### 2. Android SDK 위치
+`local.properties`에는 SDK 경로(`sdk.dir`)를 넣지 않았습니다. SDK는 컴퓨터마다 설치 위치가 달라서, 각자의 환경에서 정해지도록 했습니다.
+
+- **Android Studio로 여는 경우**: Studio가 자기 SDK 경로를 `local.properties`에 자동으로 추가하므로 따로 할 일이 없습니다.
+- **커맨드라인으로 빌드하는 경우**: `ANDROID_HOME` 환경 변수에 SDK 경로를 지정하거나, `local.properties`에 `sdk.dir`을 직접 추가합니다. 둘 다 없으면 `SDK location not found` 오류로 빌드가 실패합니다.
+
+```bash
+export ANDROID_HOME=$HOME/Library/Android/sdk   # macOS 기본 설치 위치 예시
+```
+
+### 3. 빌드 · 실행
 ```bash
 ./gradlew assembleDebug        # 디버그 APK 빌드 → app/build/outputs/apk/debug/app-debug.apk
 ./gradlew installDebug         # 연결된 기기에 설치
